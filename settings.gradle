@@ -1,0 +1,3 @@
+rootProject.name = 'gradle-examples'
+
+include('spring-actuator-build-info')

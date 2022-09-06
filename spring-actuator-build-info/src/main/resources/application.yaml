@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: spring-actuator-build-info
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    git:
+      mode: full
+    env:
+      enabled: true
+
+info:
+  app:
+    website: http://example.com
