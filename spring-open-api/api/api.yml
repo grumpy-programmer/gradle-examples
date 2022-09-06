@@ -1,0 +1,149 @@
+openapi: 3.0.0
+info:
+  title: Example Spring OpenAPI
+  version: '1'
+paths:
+  /posts:
+    get:
+      operationId: getAllPosts
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+    post:
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreate'
+      responses:
+        201:
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /posts/{postId}:
+    get:
+      operationId: getPostById
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        200:
+          description: Post with given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        404:
+          description: Post with given id not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+    put:
+      operationId: updatePostById
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUpdate'
+      responses:
+        200:
+          description: Post with given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        404:
+          description: Post with given id not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+    delete:
+      operationId: deletePostById
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        204:
+          description: Post successful deleted
+        404:
+          description: Post with given id not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+components:
+  schemas:
+    Id:
+      type: string
+
+    BasePost:
+      type: object
+      properties:
+        title:
+          type: string
+
+    Post:
+      allOf:
+        - $ref: '#/components/schemas/BasePost'
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+
+    PostCreate:
+      allOf:
+        - $ref: '#/components/schemas/BasePost'
+
+    PostUpdate:
+      allOf:
+        - $ref: '#/components/schemas/BasePost'
+
+    NotFoundError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      properties:
+        id:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
