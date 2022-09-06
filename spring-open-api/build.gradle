@@ -1,0 +1,79 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.3'
+    id 'io.spring.dependency-management' version '1.0.13.RELEASE'
+    id 'org.openapi.generator' version '6.0.0'
+    id 'java'
+}
+
+group = 'io.grumpy-programmer'
+version = System.getenv('VERSION') ?: 'unknown'
+sourceCompatibility = JavaVersion.VERSION_17
+
+sourceSets {
+    main {
+        java {
+            srcDir layout.buildDirectory.dir('generated/sources/api/java/main')
+        }
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+openApiGenerate {
+    generatorName = 'spring'
+    globalProperties = [
+            'apis'  : '',
+            'models': ''
+    ]
+    configOptions = [
+            'sourceFolder'           : 'java/main',
+            'interfaceOnly'          : 'true',
+            'skipDefaultInterface'   : 'true',
+            'documentationProvider'  : 'none',
+            'openApiNullable'        : 'false',
+            'useBeanValidation'      : 'false',
+            'hideGenerationTimestamp': 'true',
+    ]
+    inputSpec = layout.projectDirectory.file('api/api.yml').toString()
+    outputDir = layout.buildDirectory.dir('generated/sources/api').get().toString()
+
+    apiPackage = 'io.grumpyprogrammer.example.spring.openapi.api'
+    modelPackage = 'io.grumpyprogrammer.example.spring.openapi.api.dto'
+}
+
+tasks.register('openApiCopySpec', Copy) {
+    from layout.projectDirectory.dir('api')
+    into layout.buildDirectory.dir('resources/main/static')
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('openApiCopySpec')
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('openApiGenerate')
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named("jar") {
+    enabled = false
+}
