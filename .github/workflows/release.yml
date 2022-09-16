@@ -35,7 +35,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Unit Tests
+        env:
+          VERSION: ${{ steps.semver.outputs.version }}
         run: ./gradlew test
+
+      - name: Contract Tests
+        env:
+          VERSION: ${{ steps.semver.outputs.version }}
+        run: ./gradlew contractTest
 
       - name: Build
         env:
