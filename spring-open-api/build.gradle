@@ -28,6 +28,8 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -42,24 +44,46 @@ openApiGenerate {
             'models': ''
     ]
     configOptions = [
-            'sourceFolder'           : 'java/main',
-            'interfaceOnly'          : 'true',
-            'skipDefaultInterface'   : 'true',
-            'documentationProvider'  : 'none',
-            'openApiNullable'        : 'false',
-            'useBeanValidation'      : 'false',
-            'hideGenerationTimestamp': 'true',
+            'sourceFolder'         : 'java/main',
+            'interfaceOnly'        : 'true',
+            'skipDefaultInterface' : 'true',
+            'documentationProvider': 'none',
+            'openApiNullable'      : 'false',
+            'useBeanValidation'    : 'true',
     ]
-    inputSpec = layout.projectDirectory.file('api/api.yml').toString()
-    outputDir = layout.buildDirectory.dir('generated/sources/api').get().toString()
+    inputSpec = "${projectDir}/api/api.yml"
+    outputDir = "${buildDir}/generated/sources/api"
 
     apiPackage = 'io.grumpyprogrammer.example.spring.openapi.api'
     modelPackage = 'io.grumpyprogrammer.example.spring.openapi.api.dto'
 }
 
+tasks.named('openApiGenerate') {
+    finalizedBy tasks.named('openApiDtoClean')
+}
+
+tasks.register('openApiClean', Delete) {
+    group = 'openapi tools'
+    description = 'Clean generated Open API classes.'
+
+    delete "${buildDir}/generated/sources/api"
+}
+
+tasks.register('openApiDtoClean', Delete) {
+    group = 'openapi tools'
+    description = 'Clean *AllOf DTO classes.'
+
+    delete fileTree("${buildDir}/generated/sources/api") {
+        include '**/*AllOf.java'
+    }
+}
+
 tasks.register('openApiCopySpec', Copy) {
-    from layout.projectDirectory.dir('api')
-    into layout.buildDirectory.dir('resources/main/static')
+    group = 'openapi tools'
+    description = 'Copy Open API yaml to application static.'
+
+    from "${projectDir}/api"
+    into "${buildDir}/resources/main/static"
 }
 
 tasks.named('processResources') {

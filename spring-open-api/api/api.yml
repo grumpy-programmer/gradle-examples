@@ -112,11 +112,12 @@ components:
     Post:
       allOf:
         - $ref: '#/components/schemas/BasePost'
-      properties:
-        id:
-          type: string
-        title:
-          type: string
+        - type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
 
     PostCreate:
       allOf:
@@ -129,9 +130,10 @@ components:
     NotFoundError:
       allOf:
         - $ref: '#/components/schemas/Error'
-      properties:
-        id:
-          type: string
+        - type: object
+          properties:
+            id:
+              type: string
 
     Error:
       type: object
