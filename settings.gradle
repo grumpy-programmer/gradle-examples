@@ -2,3 +2,4 @@ rootProject.name = 'gradle-examples'
 
 include('spring-actuator-build-info')
 include('spring-open-api')
+include('spring-cloud-contract')
