@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version '2.7.3'
     id 'io.spring.dependency-management' version '1.0.13.RELEASE'
     id 'org.openapi.generator' version '6.0.0'
+    id 'maven-publish'
     id 'java'
 }
 
@@ -18,6 +19,7 @@ sourceSets {
 }
 
 configurations {
+    api
     compileOnly {
         extendsFrom annotationProcessor
     }
@@ -28,6 +30,8 @@ repositories {
 }
 
 dependencies {
+//    api group: 'io.grumpy-programmer', name: 'spring-open-api', version: 'unknown', classifier: 'api', ext: 'yaml'
+
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -35,6 +39,25 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            pom.withXml {
+                Node root = asNode()
+                root.remove(root.get("dependencyManagement"))
+
+            }
+            artifact("${buildDir}/api/api.yaml") {
+                classifier 'api'
+                extension 'yaml'
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
 }
 
 openApiGenerate {
@@ -51,15 +74,11 @@ openApiGenerate {
             'openApiNullable'      : 'false',
             'useBeanValidation'    : 'true',
     ]
-    inputSpec = "${projectDir}/api/api.yml"
+    inputSpec = "${buildDir}/api/api.yaml"
     outputDir = "${buildDir}/generated/sources/api"
 
     apiPackage = 'io.grumpyprogrammer.example.spring.openapi.api'
     modelPackage = 'io.grumpyprogrammer.example.spring.openapi.api.dto'
-}
-
-tasks.named('openApiGenerate') {
-    finalizedBy tasks.named('openApiDtoClean')
 }
 
 tasks.register('openApiClean', Delete) {
@@ -69,25 +88,30 @@ tasks.register('openApiClean', Delete) {
     delete "${buildDir}/generated/sources/api"
 }
 
-tasks.register('openApiDtoClean', Delete) {
-    group = 'openapi tools'
-    description = 'Clean *AllOf DTO classes.'
-
-    delete fileTree("${buildDir}/generated/sources/api") {
-        include '**/*AllOf.java'
-    }
+tasks.named('openApiGenerate') {
+    dependsOn tasks.named('copyOpenApiDependencies')
 }
 
-tasks.register('openApiCopySpec', Copy) {
+tasks.register('copyOpenApiDependencies', Copy) {
+    from configurations.api, "${projectDir}/api"
+    into "${buildDir}/api"
+    rename '(.+)-.*-api.(.+)', '$1.$2'
+
+    dependsOn configurations.api
+}
+
+tasks.register('copyOpenApiResources', Copy) {
     group = 'openapi tools'
     description = 'Copy Open API yaml to application static.'
 
-    from "${projectDir}/api"
+    from "${buildDir}/api"
     into "${buildDir}/resources/main/static"
+
+    dependsOn tasks.named('copyOpenApiDependencies')
 }
 
 tasks.named('processResources') {
-    dependsOn tasks.named('openApiCopySpec')
+    dependsOn tasks.named('copyOpenApiResources')
 }
 
 tasks.named('compileJava') {
@@ -100,4 +124,8 @@ tasks.named('test') {
 
 tasks.named("jar") {
     enabled = false
+}
+
+tasks.named('publish') {
+    dependsOn tasks.named('copyOpenApiDependencies')
 }
